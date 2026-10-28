@@ -1,0 +1,48 @@
+# ==== Python ====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ==== 虚拟环境 ====
+.venv/
+venv/
+env/
+
+# ==== 测试与覆盖率 ====
+.pytest_cache/
+pytest-cache-files-*
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+
+# ==== 临时文件 ====
+.tmp/
+
+# ==== 环境变量与敏感信息 ====
+.env
+.env.*
+!.env.example
+
+# ==== 运行时数据（用户文件 / 向量库 / 日志，不入库） ====
+data/
+logs/
+*.log
+chroma/
+.workpilot/
+
+# ==== IDE / 操作系统 ====
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db

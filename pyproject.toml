@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "workpilot"
+version = "0.1.0"
+description = "WorkPilot Agent - 办公任务自动化 Agent（文档读写、多步骤执行、RAG 问答、日志与校验）。"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+# 沙盒下 tempfile 子目录写入受限，禁用 cacheprovider 以避免缓存写入告警。
+addopts = "-ra -p no:cacheprovider"
