@@ -9,6 +9,7 @@ from langchain_core.messages import AIMessage
 from langchain_openai import ChatOpenAI
 
 from workpilot.agent import AgentRunner, AgentTimeoutError, build_agent, get_chat_model
+from workpilot.agent.builder import build_system_prompt
 from workpilot.config import Settings
 from workpilot.schemas.tools import (
     CreateDocumentInput,
@@ -178,3 +179,9 @@ def test_runner_timeout(tmp_path: Path):
     )
     with pytest.raises(AgentTimeoutError):
         runner.run("hi")
+
+
+def test_system_prompt_includes_allowed_dirs(tmp_path: Path):
+    prompt = build_system_prompt([tmp_path / "data"])
+    assert str(tmp_path / "data") in prompt
+    assert "相对路径" in prompt

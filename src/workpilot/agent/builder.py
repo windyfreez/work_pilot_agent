@@ -1,5 +1,7 @@
 """组装 LangChain 工具调用 Agent。"""
 
+from pathlib import Path
+
 from langchain.agents import create_agent
 from langchain.agents.middleware import ToolCallLimitMiddleware, ToolErrorMiddleware
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -10,11 +12,17 @@ from workpilot.tools.registry import build_tools
 
 from .llm import get_chat_model
 
-SYSTEM_PROMPT = (
-    "你是 WorkPilot 办公助手，负责执行文档读写类办公任务。"
-    "操作文件前先用 list_files 查看目录，再按需调用 read_document 或 create_document。"
-    "所有文件操作都被限制在授权目录内，请勿尝试越界路径。"
-)
+def build_system_prompt(allowed_dirs: list[Path]) -> str:
+    """根据授权目录构造系统提示词，明确告知模型可操作的具体路径。"""
+    dirs = "\n".join(f"- {p}" for p in allowed_dirs)
+    return (
+        "你是 WorkPilot 办公助手，负责执行文档读写类办公任务。\n\n"
+        f"授权目录（你只能读写这些目录内的文件，绝对路径如下）：\n{dirs}\n\n"
+        "规则：\n"
+        "1. 操作文件前先用 list_files 查看目录，再按需 read_document / create_document。\n"
+        "2. 工具的 path / directory 参数可用相对路径（相对于第一个授权目录）或上述绝对路径。\n"
+        "3. 不要尝试授权目录之外的路径（如 ../、/ 等）。"
+    )
 
 
 def _on_tool_error(exc: Exception, request) -> str | None:
@@ -52,6 +60,6 @@ def build_agent(
     return create_agent(
         model=chat_model,
         tools=tools,
-        system_prompt=SYSTEM_PROMPT,
+        system_prompt=build_system_prompt(settings.allowed_dirs),
         middleware=middleware,
     )
