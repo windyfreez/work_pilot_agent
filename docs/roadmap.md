@@ -17,9 +17,10 @@
 - [x] Pydantic 工具参数模型（`ListFilesInput` 等）。
 - [x] 模型客户端封装（OpenAI 兼容协议，`langchain-openai`）。
 - [x] 工具注册到 LangChain `create_agent`（tool-calling 循环）。
-- [x] 单元测试：路径越界 / 工具异常与边界 / Agent 工具循环（假模型，不连真模型）。
+- [x] 完整循环 + 异常捕获（`ToolErrorMiddleware`）+ 调用次数限制（`ToolCallLimitMiddleware`）+ 超时（模型请求 + `AgentRunner` 整体超时）。
+- [x] 单元测试：路径越界 / 工具异常与边界 / Agent 多步循环、异常捕获、次数限制、超时（假模型，不连真模型）。
 
-**验收**：`pytest` 全绿（26 passed，1 skipped）。依赖：langchain、langchain-core、langchain-openai、pydantic、pydantic-settings。
+**验收**：`pytest` 全绿（33 passed，1 skipped）。依赖：langchain、langchain-core、langchain-openai、pydantic、pydantic-settings。
 
 ## 阶段 1（顺延）：API 骨架
 

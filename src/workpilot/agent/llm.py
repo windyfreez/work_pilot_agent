@@ -21,4 +21,6 @@ def get_chat_model(settings: Settings | None = None) -> BaseChatModel:
         kwargs["openai_api_base"] = settings.llm_base_url
     if settings.llm_api_key:
         kwargs["openai_api_key"] = settings.llm_api_key
+    if settings.llm_request_timeout is not None:
+        kwargs["request_timeout"] = settings.llm_request_timeout
     return ChatOpenAI(**kwargs)

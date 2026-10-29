@@ -19,6 +19,7 @@
 - ✅ Pydantic 工具参数模型。
 - ✅ 三个文件工具：`list_files` / `read_document` / `create_document`（含路径校验与授权目录）。
 - ✅ 工具注册到 LangChain Agent（`create_agent` tool-calling 循环）。
+- ✅ 完整工具调用循环 + 异常捕获（`ToolErrorMiddleware`）+ 调用次数限制（`ToolCallLimitMiddleware`）+ 超时（模型请求 + 整体运行）。
 
 尚未实现：
 
@@ -55,7 +56,7 @@ work_pilot_agent/
 │   ├── config/           # Settings（pydantic-settings 读 .env）
 │   ├── schemas/          # Pydantic 工具参数模型
 │   ├── tools/            # 路径校验 + 三个文件工具 + LangChain 注册
-│   └── agent/            # 模型客户端 + Agent 组装
+│   └── agent/            # 模型客户端 + Agent 组装 + 运行器（超时/结构化结果）
 └── tests/
     ├── test_smoke.py
     ├── test_paths.py
@@ -97,3 +98,4 @@ python -m venv .venv
 - **LLM 供应商**：采用 OpenAI 兼容协议；具体供应商与模型名经 `.env` 配置，真实 API 调用需人工提供密钥验收（测试中不连真实模型）。
 - **langsmith 弃用告警**：测试输出 13 条 `asyncio.iscoroutinefunction` 弃用告警，来自第三方 `langsmith`，暂不处理。
 - **沙盒限制**：`pip install` / `python -m venv` 需无沙盒执行；pytest 的 `tmp_path` 依赖 `conftest.py` 重定向临时目录并放宽目录 mode（详见 `conftest.py` 注释）。
+- **整体超时实现**：`AgentRunner` 用守护线程 + 队列实现跨平台超时；超时后线程仍在后台运行至结束（不阻塞进程退出），属已知取舍。

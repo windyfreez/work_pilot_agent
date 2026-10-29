@@ -61,6 +61,12 @@ def test_read_document_too_large(resolver: PathResolver, tmp_path: Path):
         files.read_document(resolver, "big.txt", max_bytes=10)
 
 
+def test_read_document_exact_max_bytes_ok(resolver: PathResolver, tmp_path: Path):
+    content = "a" * 10
+    (tmp_path / "exact.txt").write_text(content, encoding="utf-8")
+    assert files.read_document(resolver, "exact.txt", max_bytes=10) == content
+
+
 def test_read_document_binary(resolver: PathResolver, tmp_path: Path):
     (tmp_path / "bin.txt").write_bytes(b"\x00\x01\x02")
     with pytest.raises(PathError):
@@ -89,3 +95,9 @@ def test_create_document_overwrites(resolver: PathResolver, tmp_path: Path):
 def test_create_document_traversal_rejected(resolver: PathResolver):
     with pytest.raises(PathError):
         files.create_document(resolver, "../evil.md", "x")
+
+
+def test_create_document_parent_is_file(resolver: PathResolver, tmp_path: Path):
+    (tmp_path / "a.txt").write_text("x", encoding="utf-8")
+    with pytest.raises(OSError):
+        files.create_document(resolver, "a.txt/child.md", "x")

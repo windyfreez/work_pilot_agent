@@ -45,6 +45,7 @@ src/workpilot/
 - **路径安全前置**：文件工具统一走 `PathResolver`，校验 `resolve()` 后的路径落在 `WORKPILOT_ALLOWED_DIRS` 内。
 - **状态显式化**：LangGraph `State` 由 Pydantic 描述，便于持久化与重放。
 - **RAG 本地化**：Chroma 持久化目录不入库（`chroma/` 已忽略）。
+- **循环健壮性**：工具异常经 `ToolErrorMiddleware` 捕获回传模型、调用次数经 `ToolCallLimitMiddleware` 限制、整体运行经 `AgentRunner` 限时。
 
 ## 5. 数据流（示例场景）
 
@@ -70,6 +71,6 @@ src/workpilot/
 - `config/`：`Settings`（pydantic-settings 读 `.env`，密钥不硬编码）。
 - `schemas/`：`ListFilesInput` / `ReadDocumentInput` / `CreateDocumentInput`。
 - `tools/`：`PathResolver`（路径校验）+ `list_files` / `read_document` / `create_document` + `build_tools`（包装为 LangChain 工具）。
-- `agent/`：`get_chat_model`（OpenAI 兼容工厂）+ `build_agent`（`create_agent` tool-calling Agent）。
+- `agent/`：`get_chat_model`（OpenAI 兼容工厂）+ `build_agent`（`create_agent` + `ToolErrorMiddleware`/`ToolCallLimitMiddleware`）+ `AgentRunner`（整体超时与结构化结果）。
 
 **未实现**：`api/`（FastAPI）、`workflow/`（显式 LangGraph 图）、`rag/`、`logging/`、`verify/`（按 roadmap 逐阶段实现）。

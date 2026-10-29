@@ -26,6 +26,11 @@ class Settings(BaseSettings):
     llm_base_url: str | None = None  # 为空时使用官方端点
     llm_api_key: str | None = None  # 从环境变量 WORKPILOT_LLM_API_KEY 读取
     llm_temperature: float = 0.0
+    llm_request_timeout: float | None = None  # 单次模型请求超时（秒）
+
+    # ---- Agent ----
+    agent_timeout_seconds: float | None = None  # 单次运行整体超时（秒），None=不限制
+    agent_max_tool_calls: int = 10  # 单次运行最多工具调用次数
 
     # ---- 文件工具 ----
     # 授权目录：字符串可用平台分隔符（Windows ';'，POSIX ':'）或逗号分隔。
