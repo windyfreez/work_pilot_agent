@@ -1,6 +1,6 @@
 # WorkPilot Agent 架构设计
 
-> 状态：**目标架构（规划）**。阶段 0 未实现任何运行时组件，本文用于对齐后续各阶段的实现边界。
+> 状态：**目标架构 + 部分已实现**。工具层（路径校验 + 文档读写）、智能层的模型客户端与工具调用已落地；接口层（FastAPI）、RAG、观测层等仍为规划。
 
 ## 1. 总览
 
@@ -63,7 +63,13 @@ src/workpilot/
 - 文件操作严格限权 + 路径校验。
 - 日志脱敏：不记录密钥与用户文件内容。
 
-## 7. 阶段 0 交付 vs 未交付
+## 7. 当前实现状态
 
-- **已交付**：Git 仓库、venv、`pyproject.toml`、`.gitignore`、`.env.example`、README/AGENTS/架构/路线图、冒烟测试。
-- **未交付**：上述所有运行时组件（按 roadmap 逐阶段实现）。
+**已实现**：
+
+- `config/`：`Settings`（pydantic-settings 读 `.env`，密钥不硬编码）。
+- `schemas/`：`ListFilesInput` / `ReadDocumentInput` / `CreateDocumentInput`。
+- `tools/`：`PathResolver`（路径校验）+ `list_files` / `read_document` / `create_document` + `build_tools`（包装为 LangChain 工具）。
+- `agent/`：`get_chat_model`（OpenAI 兼容工厂）+ `build_agent`（`create_agent` tool-calling Agent）。
+
+**未实现**：`api/`（FastAPI）、`workflow/`（显式 LangGraph 图）、`rag/`、`logging/`、`verify/`（按 roadmap 逐阶段实现）。
