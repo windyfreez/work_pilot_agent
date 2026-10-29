@@ -2,9 +2,10 @@
 
 import os
 from pathlib import Path
+from typing import Annotated
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -34,7 +35,8 @@ class Settings(BaseSettings):
 
     # ---- 文件工具 ----
     # 授权目录：字符串可用平台分隔符（Windows ';'，POSIX ':'）或逗号分隔。
-    allowed_dirs: list[Path] = Field(default_factory=lambda: [Path("data")])
+    # NoDecode：阻止 pydantic-settings 把该字段当 JSON 解析，交给 _parse_allowed_dirs 处理普通字符串。
+    allowed_dirs: Annotated[list[Path], NoDecode] = Field(default_factory=lambda: [Path("data")])
     read_max_bytes: int = 1_000_000  # read_document 读取上限（默认 1 MB）
 
     @field_validator("allowed_dirs", mode="before")
@@ -50,3 +52,11 @@ class Settings(BaseSettings):
     @classmethod
     def _resolve_allowed_dirs(cls, value: list[Path]) -> list[Path]:
         return [p.expanduser().resolve() for p in value]
+
+    @field_validator("llm_request_timeout", "agent_timeout_seconds", mode="before")
+    @classmethod
+    def _empty_str_to_none(cls, value: object) -> object:
+        # .env 里留空（如 `WORKPILOT_LLM_REQUEST_TIMEOUT=`）会得到空字符串，需转为 None。
+        if isinstance(value, str) and value.strip() == "":
+            return None
+        return value
