@@ -39,6 +39,14 @@ class Settings(BaseSettings):
     task_timeout_seconds: float | None = None  # 单次 run/resume 调用超时（秒），None=不限制
     checkpoint_db_path: str = ".workpilot/checkpoints.sqlite"  # checkpoint 持久化数据库
 
+    # ---- RAG 知识库 ----
+    chroma_dir: str = "./chroma"  # Chroma 持久化目录
+    embedding_model: str = "text-embedding-3-small"  # 向量化模型
+    rag_chunk_size: int = 500  # 分块大小（字符）
+    rag_chunk_overlap: int = 50  # 分块重叠
+    rag_top_k: int = 4  # 检索返回条数
+    rag_score_threshold: float | None = None  # 检索相关度阈值，低于视为无相关资料
+
     # ---- 文件工具 ----
     # 授权目录：字符串可用平台分隔符（Windows ';'，POSIX ':'）或逗号分隔。
     # NoDecode：阻止 pydantic-settings 把该字段当 JSON 解析，交给 _parse_allowed_dirs 处理普通字符串。

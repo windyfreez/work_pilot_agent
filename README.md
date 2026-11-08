@@ -2,7 +2,7 @@
 
 一个能够执行办公任务的智能 Agent：支持文档读取与生成、多步骤任务执行、RAG 知识库问答、执行日志与结果验证。
 
-> **当前状态：文档工具 + 模型客户端 + LangChain Agent + 可控任务工作流（LangGraph）已就绪。** 尚未实现 FastAPI API、RAG、MCP 或前端功能。
+> **当前状态：文档工具 + 模型客户端 + LangChain Agent + 可控任务工作流（LangGraph）+ RAG 知识库已就绪。** 尚未实现 FastAPI API、MCP 或前端功能。
 
 ## 项目目标
 
@@ -21,10 +21,11 @@
 - ✅ 工具注册到 LangChain Agent（`create_agent` tool-calling 循环）。
 - ✅ 完整工具调用循环 + 异常捕获（`ToolErrorMiddleware`）+ 调用次数限制（`ToolCallLimitMiddleware`）+ 超时（模型请求 + 整体运行）。
 - ✅ 可控任务工作流（`workflow/`）：`TaskState` 统一状态 + LangGraph 规划/执行/验证节点 + checkpoint 持久化 + 覆盖写人工确认 + 写文件幂等。
+- ✅ RAG 知识库（`rag/`）：文档导入解析（txt/md/pdf/docx/xlsx）→ 清洗 → 分块 → 向量化写 Chroma（含来源元数据）→ 语义检索 Top-K → 带来源引用回答 + 无相关资料兜底。
 
 尚未实现：
 
-- ⛔ FastAPI API 层、RAG（Chroma）、MCP、执行日志 / 结果验证、Vue 3 前端。
+- ⛔ FastAPI API 层、MCP、结构化执行日志、Vue 3 前端。
 
 ## 技术栈
 
@@ -36,7 +37,7 @@
 | 工作流 | LangGraph | ✅ 已实现（显式 `StateGraph`：规划/执行/验证） |
 | 校验 | Pydantic + pydantic-settings | ✅ 已实现 |
 | API | FastAPI | 阶段 1（顺延） |
-| 知识库 | Chroma | 阶段 5 |
+| 知识库 | Chroma + langchain-chroma | ✅ 已实现（语义检索 + 带引用回答） |
 | 前端 | Vue 3 | 阶段 7 |
 
 ## 目录结构
@@ -58,7 +59,12 @@ work_pilot_agent/
 │   ├── schemas/          # Pydantic 工具参数模型
 │   ├── tools/            # 路径校验 + 三个文件工具 + LangChain 注册
 │   ├── agent/            # 模型客户端 + Agent 组装 + 运行器（超时/结构化结果）
-│   └── workflow/         # 可控任务工作流（TaskState + LangGraph + checkpoint + 确认）
+│   ├── workflow/         # 可控任务工作流（TaskState + LangGraph + checkpoint + 确认）
+│   └── rag/              # RAG 知识库（解析/清洗/分块/向量化/检索/回答）
+├── eval/
+│   ├── corpus/           # 评测语料
+│   ├── eval_set.json     # 评测集（问题/标准答案/预期引用）
+│   └── eval_rag.py       # 评测脚本
 └── tests/
     ├── test_smoke.py
     ├── test_config.py
@@ -66,7 +72,9 @@ work_pilot_agent/
     ├── test_tools.py
     ├── test_agent.py
     ├── test_workflow.py
-    └── test_workflow_verify.py
+    ├── test_workflow_verify.py
+    ├── test_rag_loader.py
+    └── test_rag_pipeline.py
 ```
 
 （`.venv/`、`.tmp/`、`.pytest-tmp/` 为本地生成，已被 gitignore。）
@@ -75,8 +83,8 @@ work_pilot_agent/
 
 - **Python**：`>=3.11`（当前开发机 3.14.5）。
 - **依赖管理**：`venv + pip + pyproject.toml`（PEP 621），未引入 uv/poetry。
-- **运行时依赖**：`langchain`、`langchain-core`、`langchain-openai`、`langgraph`、`langgraph-checkpoint-sqlite`、`pydantic`、`pydantic-settings`。
-- **开发依赖**：`pytest`。
+- **运行时依赖**：`langchain`、`langchain-core`、`langchain-openai`、`langgraph`、`langgraph-checkpoint-sqlite`、`chromadb`、`langchain-chroma`、`pypdf`、`python-docx`、`openpyxl`、`pydantic`、`pydantic-settings`。
+- **开发依赖**：`pytest`、`reportlab`（生成测试用 PDF）。
 
 ### 安装
 
@@ -99,8 +107,9 @@ python -m venv .venv
 
 ## 未解决问题
 
-- **文档格式**：仅支持 txt/md 文本；PDF（pdfplumber / pypdf）、Word（python-docx）、Excel（openpyxl）选型未定。
+- **文档格式**：已支持 txt/md/pdf/docx/xlsx；复杂排版（表格/图片）的提取精度待增强。
 - **LLM 供应商**：采用 OpenAI 兼容协议；具体供应商与模型名经 `.env` 配置，真实 API 调用需人工提供密钥验收（测试中不连真实模型）。
 - **langsmith 弃用告警**：测试输出 13 条 `asyncio.iscoroutinefunction` 弃用告警，来自第三方 `langsmith`，暂不处理。
 - **沙盒限制**：`pip install` / `python -m venv` 需无沙盒执行；pytest 的 `tmp_path` 依赖 `conftest.py` 重定向临时目录并放宽目录 mode（详见 `conftest.py` 注释）。
 - **整体超时实现**：`AgentRunner` 用守护线程 + 队列实现跨平台超时；超时后线程仍在后台运行至结束（不阻塞进程退出），属已知取舍。
+- **RAG 检索阈值**：`rag_score_threshold` 默认不过滤；「无相关资料」检测需按 embedding 模型标定阈值（评测脚本可用 `--score-threshold`）。

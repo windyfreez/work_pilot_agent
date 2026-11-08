@@ -1,6 +1,6 @@
 # WorkPilot Agent 架构设计
 
-> 状态：**目标架构 + 大部分已实现**。工具层、智能层（模型客户端/工具调用）与编排层（LangGraph 可控工作流）已落地；接口层（FastAPI）、RAG、观测层（执行日志）等仍为规划。
+> 状态：**目标架构 + 大部分已实现**。工具层、智能层（模型客户端/工具调用 + RAG 检索）、编排层（LangGraph 可控工作流）已落地；接口层（FastAPI）、观测层（结构化执行日志）等仍为规划。
 
 ## 1. 总览
 
@@ -73,5 +73,6 @@ src/workpilot/
 - `tools/`：`PathResolver`（路径校验）+ `list_files` / `read_document` / `create_document` + `build_tools`（包装为 LangChain 工具）。
 - `agent/`：`get_chat_model`（OpenAI 兼容工厂）+ `build_agent`（`create_agent` + `ToolErrorMiddleware`/`ToolCallLimitMiddleware`）+ `AgentRunner`（整体超时与结构化结果）。
 - `workflow/`：`TaskState`（统一状态）+ `StateGraph`（规划→执行→验证→结束）+ `WorkflowRunner`（SQLite checkpoint + `interrupt` 人工确认 + 超时）+ `verify.py`（结果验证）。
+- `rag/`：`loader`（txt/md/pdf/docx/xlsx 解析）+ `cleaner`/`splitter` + `KnowledgeStore`（Chroma 向量化 + 来源元数据 + Top-K 检索）+ `build_retrieval_tool` + `answer_with_sources`（带引用回答 + 无资料兜底）。
 
-**未实现**：`api/`（FastAPI）、`rag/`、`logging/`（结构化执行日志，按 roadmap 逐步实现）。
+**未实现**：`api/`（FastAPI）、`logging/`（结构化执行日志，按 roadmap 逐步实现）。

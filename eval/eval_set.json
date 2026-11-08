@@ -1,0 +1,34 @@
+{
+  "questions": [
+    {
+      "id": "q1",
+      "question": "文件操作的授权目录由哪个环境变量配置？",
+      "answer_keywords": ["WORKPILOT_ALLOWED_DIRS"],
+      "expected_sources": ["config.md"]
+    },
+    {
+      "id": "q2",
+      "question": "WorkPilot 提供了哪些文件操作工具？",
+      "answer_keywords": ["list_files", "read_document", "create_document"],
+      "expected_sources": ["tools.md"]
+    },
+    {
+      "id": "q3",
+      "question": "任务工作流包含哪几个阶段？",
+      "answer_keywords": ["规划", "执行", "验证"],
+      "expected_sources": ["workflow.md"]
+    },
+    {
+      "id": "q4",
+      "question": "知识库用哪个本地向量存储？",
+      "answer_keywords": ["Chroma"],
+      "expected_sources": ["rag.md"]
+    },
+    {
+      "id": "q5",
+      "question": "火星上有没有液态水？",
+      "answer_keywords": [],
+      "expected_sources": []
+    }
+  ]
+}

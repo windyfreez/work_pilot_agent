@@ -41,11 +41,17 @@
 
 **验收**：`pytest` 全绿。依赖新增：langgraph、langgraph-checkpoint-sqlite。
 
-## 阶段 5：RAG 知识库
+## 阶段 5（已完成）✅：RAG 知识库
 
-- Chroma 本地向量库、文档切分 / 嵌入 / 检索、RAG 问答接口。
+- [x] 文档导入与格式解析（txt / md / pdf / docx / xlsx）。
+- [x] 文本清洗与分块（自实现，无额外依赖）。
+- [x] 向量化写 Chroma（OpenAI 兼容 embedding）+ 来源 / 文件名 / 分块号元数据。
+- [x] 语义检索 Top-K + 相关度阈值（无相关资料检测）。
+- [x] 检索封装为 LangChain 工具。
+- [x] 带来源引用回答 + 无资料兜底（「知识库中没有找到足够依据」）。
+- [x] 可重复评测集（`eval/`：问题 / 标准答案 / 预期引用 + recall@k / 引用 / 关键词指标）。
 
-**依赖**：chromadb、embedding provider。
+**验收**：`pytest` 全绿（72 passed，1 skipped）。依赖新增：chromadb、langchain-chroma、pypdf、python-docx、openpyxl（dev：reportlab）。
 
 ## 阶段 6：执行日志与结果验证
 
@@ -57,7 +63,8 @@
 
 ## 未解决问题
 
-- 文档格式：仍仅 txt/md；PDF / Word / Excel 解析库选型未定。
+- 文档格式：已支持 txt/md/pdf/docx/xlsx；复杂排版提取精度待增强。
 - LLM 供应商：采用 OpenAI 兼容协议，具体供应商 / 模型名经 `.env` 配置；真实调用需人工提供密钥验收。
 - langsmith 弃用告警（第三方，测试运行输出 13 条 `asyncio.iscoroutinefunction` 弃用告警）。
 - 任务超时语义：当前按单次 `run`/`resume` 调用计时，不含人工确认的等待时间（人工确认跨进程恢复依赖 SQLite checkpoint）。
+- RAG 检索阈值：默认不过滤，「无相关资料」检测需按 embedding 标定 `rag_score_threshold`（评测脚本可用 `--score-threshold`）。
