@@ -36,6 +36,7 @@ class TaskStatus(str, Enum):
     EXECUTING = "executing"
     SUCCEEDED = "succeeded"
     FAILED = "failed"
+    CANCELLED = "cancelled"
 
 
 class TaskState(TypedDict, total=False):

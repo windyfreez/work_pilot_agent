@@ -20,8 +20,18 @@ _PLANNING_SYSTEM_PROMPT = (
 )
 
 
-def build_graph(settings: Settings, model: BaseChatModel, checkpointer=None):
-    """构建并编译任务工作流图。"""
+def build_graph(
+    settings: Settings,
+    model: BaseChatModel,
+    checkpointer=None,
+    should_cancel=None,
+):
+    """构建并编译任务工作流图。
+
+    ``should_cancel`` 为可选回调 ``Callable[[str], bool]``，接收 task_id，
+    返回 True 时工作流在下一个节点前终止，状态置为 ``cancelled``（协作式取消）。
+    """
+    should_cancel = should_cancel or (lambda task_id: False)
     tools = build_tools(settings)
     tools_by_name = {t.name: t for t in tools}
     resolver = PathResolver(settings.allowed_dirs)
@@ -40,6 +50,8 @@ def build_graph(settings: Settings, model: BaseChatModel, checkpointer=None):
         return {"plan": steps, "current_step": 0, "retries": 0, "status": "planned"}
 
     def execute_node(state: TaskState) -> dict:
+        if should_cancel(state.get("task_id", "")):
+            return {"status": "cancelled"}
         step = state["plan"][state["current_step"]]
 
         # 高风险操作（覆盖已存在且内容不同的文件）需人工确认
@@ -63,6 +75,8 @@ def build_graph(settings: Settings, model: BaseChatModel, checkpointer=None):
         return {"results": results, "status": "executing"}
 
     def verify_node(state: TaskState) -> dict:
+        if should_cancel(state.get("task_id", "")):
+            return {"status": "cancelled"}
         step = state["plan"][state["current_step"]]
         last = state.get("results", [])[-1] if state.get("results") else ""
         verification = verify_step(step, last, resolver)
@@ -87,13 +101,13 @@ def build_graph(settings: Settings, model: BaseChatModel, checkpointer=None):
         return {"verification": verification, "status": "failed", "error": verification.message}
 
     def route_after_plan(state: TaskState) -> str:
-        return END if state.get("status") == "failed" else "execute"
+        return END if state.get("status") in ("failed", "cancelled") else "execute"
 
     def route_after_execute(state: TaskState) -> str:
-        return END if state.get("status") == "failed" else "verify"
+        return END if state.get("status") in ("failed", "cancelled") else "verify"
 
     def route_after_verify(state: TaskState) -> str:
-        if state.get("status") in ("succeeded", "failed"):
+        if state.get("status") in ("succeeded", "failed", "cancelled"):
             return END
         return "execute"
 

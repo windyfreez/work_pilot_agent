@@ -23,12 +23,16 @@
 
 **验收**：`pytest` 全绿（40 passed，1 skipped）。依赖：langchain、langchain-core、langchain-openai、pydantic、pydantic-settings。
 
-## 阶段 1（顺延）：API 骨架
+## 阶段 1（已完成）✅：FastAPI 接口层
 
-- FastAPI 应用骨架、健康检查接口。
-- 任务请求 / 响应 schema 初版。
+- [x] 任务接口：创建 / 查询状态 / 日志 / 结果 / 取消 / 审批。
+- [x] 知识库接口：文档导入 / 检索。
+- [x] 任务状态：pending / running / waiting_approval / succeeded / failed / cancelled。
+- [x] SQLite 持久化任务元数据 + 日志（独立于 LangGraph checkpoint）。
+- [x] 后台 worker 解耦「创建」与「执行」，长任务不因 HTTP 超时丢失状态。
+- [x] 协作式取消（步骤间检查取消标志）。
 
-**依赖**：fastapi、uvicorn。
+**验收**：`pytest` 全绿（86 passed，1 skipped）。依赖新增：fastapi、uvicorn。
 
 ## 阶段 4（已完成）✅：LangGraph 可控工作流
 
@@ -68,3 +72,4 @@
 - langsmith 弃用告警（第三方，测试运行输出 13 条 `asyncio.iscoroutinefunction` 弃用告警）。
 - 任务超时语义：当前按单次 `run`/`resume` 调用计时，不含人工确认的等待时间（人工确认跨进程恢复依赖 SQLite checkpoint）。
 - RAG 检索阈值：默认不过滤，「无相关资料」检测需按 embedding 标定 `rag_score_threshold`（评测脚本可用 `--score-threshold`）。
+- 后台执行：当前为进程内 worker 线程，服务重启会丢失「运行中」任务的恢复（待并发/部署需求明确后再迁移队列 / MySQL）。

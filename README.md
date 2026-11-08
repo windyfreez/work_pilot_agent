@@ -2,7 +2,7 @@
 
 一个能够执行办公任务的智能 Agent：支持文档读取与生成、多步骤任务执行、RAG 知识库问答、执行日志与结果验证。
 
-> **当前状态：文档工具 + 模型客户端 + LangChain Agent + 可控任务工作流（LangGraph）+ RAG 知识库已就绪。** 尚未实现 FastAPI API、MCP 或前端功能。
+> **当前状态：文档工具 + 模型客户端 + LangChain Agent + 可控任务工作流（LangGraph）+ RAG 知识库 + FastAPI 接口层已就绪。** 尚未实现 MCP 或前端功能。
 
 ## 项目目标
 
@@ -22,10 +22,11 @@
 - ✅ 完整工具调用循环 + 异常捕获（`ToolErrorMiddleware`）+ 调用次数限制（`ToolCallLimitMiddleware`）+ 超时（模型请求 + 整体运行）。
 - ✅ 可控任务工作流（`workflow/`）：`TaskState` 统一状态 + LangGraph 规划/执行/验证节点 + checkpoint 持久化 + 覆盖写人工确认 + 写文件幂等。
 - ✅ RAG 知识库（`rag/`）：文档导入解析（txt/md/pdf/docx/xlsx）→ 清洗 → 分块 → 向量化写 Chroma（含来源元数据）→ 语义检索 Top-K → 带来源引用回答 + 无相关资料兜底。
+- ✅ FastAPI 接口层（`api/`）：任务创建/查询/日志/结果/取消/审批 + 知识库导入/检索；SQLite 持久化任务元数据；后台 worker 解耦创建与执行。
 
 尚未实现：
 
-- ⛔ FastAPI API 层、MCP、结构化执行日志、Vue 3 前端。
+- ⛔ MCP、结构化执行日志、Vue 3 前端。
 
 ## 技术栈
 
@@ -36,7 +37,7 @@
 | 工具调用 | LangChain `create_agent` | ✅ 已实现 |
 | 工作流 | LangGraph | ✅ 已实现（显式 `StateGraph`：规划/执行/验证） |
 | 校验 | Pydantic + pydantic-settings | ✅ 已实现 |
-| API | FastAPI | 阶段 1（顺延） |
+| API | FastAPI | ✅ 已实现（任务 + 知识库接口） |
 | 知识库 | Chroma + langchain-chroma | ✅ 已实现（语义检索 + 带引用回答） |
 | 前端 | Vue 3 | 阶段 7 |
 
@@ -59,6 +60,7 @@ work_pilot_agent/
 │   ├── schemas/          # Pydantic 工具参数模型
 │   ├── tools/            # 路径校验 + 三个文件工具 + LangChain 注册
 │   ├── agent/            # 模型客户端 + Agent 组装 + 运行器（超时/结构化结果）
+│   ├── api/              # FastAPI 接口层（任务 + 知识库路由、后台 worker、SQLite）
 │   ├── workflow/         # 可控任务工作流（TaskState + LangGraph + checkpoint + 确认）
 │   └── rag/              # RAG 知识库（解析/清洗/分块/向量化/检索/回答）
 ├── eval/
@@ -74,7 +76,9 @@ work_pilot_agent/
     ├── test_workflow.py
     ├── test_workflow_verify.py
     ├── test_rag_loader.py
-    └── test_rag_pipeline.py
+    ├── test_rag_pipeline.py
+    ├── test_api.py
+    └── test_api_store.py
 ```
 
 （`.venv/`、`.tmp/`、`.pytest-tmp/` 为本地生成，已被 gitignore。）
@@ -83,7 +87,7 @@ work_pilot_agent/
 
 - **Python**：`>=3.11`（当前开发机 3.14.5）。
 - **依赖管理**：`venv + pip + pyproject.toml`（PEP 621），未引入 uv/poetry。
-- **运行时依赖**：`langchain`、`langchain-core`、`langchain-openai`、`langgraph`、`langgraph-checkpoint-sqlite`、`chromadb`、`langchain-chroma`、`pypdf`、`python-docx`、`openpyxl`、`pydantic`、`pydantic-settings`。
+- **运行时依赖**：`fastapi`、`uvicorn`、`langchain`、`langchain-core`、`langchain-openai`、`langgraph`、`langgraph-checkpoint-sqlite`、`chromadb`、`langchain-chroma`、`pypdf`、`python-docx`、`openpyxl`、`pydantic`、`pydantic-settings`。
 - **开发依赖**：`pytest`、`reportlab`（生成测试用 PDF）。
 
 ### 安装

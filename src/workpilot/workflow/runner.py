@@ -66,9 +66,11 @@ class WorkflowRunner:
         settings: Settings | None = None,
         model: BaseChatModel | None = None,
         checkpointer=None,
+        should_cancel=None,
     ):
         self._settings = settings or Settings()
         self._model = model or get_chat_model(self._settings)
+        self._should_cancel = should_cancel or (lambda task_id: False)
 
         if checkpointer is not None:
             self._checkpointer = checkpointer
@@ -77,7 +79,12 @@ class WorkflowRunner:
             self._checkpointer = self._build_sqlite_checkpointer()
             self._owns_checkpointer = True
 
-        self._graph = build_graph(self._settings, self._model, self._checkpointer)
+        self._graph = build_graph(
+            self._settings,
+            self._model,
+            self._checkpointer,
+            should_cancel=self._should_cancel,
+        )
 
     def _build_sqlite_checkpointer(self) -> SqliteSaver:
         db_path = Path(self._settings.checkpoint_db_path)

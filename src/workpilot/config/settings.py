@@ -37,7 +37,11 @@ class Settings(BaseSettings):
     task_max_steps: int = 5  # 单次任务最多规划/执行步数
     task_max_retries: int = 2  # 单步失败最大重试次数
     task_timeout_seconds: float | None = None  # 单次 run/resume 调用超时（秒），None=不限制
-    checkpoint_db_path: str = ".workpilot/checkpoints.sqlite"  # checkpoint 持久化数据库
+    checkpoint_db_path: str = ".workpilot/checkpoints.sqlite"  # 工作流 checkpoint 持久化数据库
+
+    # ---- 任务接口（阶段一：FastAPI）----
+    tasks_db_path: str = ".workpilot/tasks.sqlite"  # 任务元数据/日志 SQLite（独立于 checkpoint）
+    worker_poll_interval: float = 0.5  # 后台 worker 轮询间隔（秒）
 
     # ---- RAG 知识库 ----
     chroma_dir: str = "./chroma"  # Chroma 持久化目录
