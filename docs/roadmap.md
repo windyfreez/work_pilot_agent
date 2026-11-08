@@ -19,8 +19,9 @@
 - [x] 工具注册到 LangChain `create_agent`（tool-calling 循环）。
 - [x] 完整循环 + 异常捕获（`ToolErrorMiddleware`）+ 调用次数限制（`ToolCallLimitMiddleware`）+ 超时（模型请求 + `AgentRunner` 整体超时）。
 - [x] 单元测试：路径越界 / 工具异常与边界 / Agent 多步循环、异常捕获、次数限制、超时（假模型，不连真模型）。
+- [x] 真实闭环验证：反射式假模型证明「模型发起工具调用 → 程序真实读写文件 → 模型基于真实结果作答」，而非脚本硬编码回答。
 
-**验收**：`pytest` 全绿（33 passed，1 skipped）。依赖：langchain、langchain-core、langchain-openai、pydantic、pydantic-settings。
+**验收**：`pytest` 全绿（40 passed，1 skipped）。依赖：langchain、langchain-core、langchain-openai、pydantic、pydantic-settings。
 
 ## 阶段 1（顺延）：API 骨架
 
