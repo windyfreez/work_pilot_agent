@@ -33,6 +33,12 @@ class Settings(BaseSettings):
     agent_timeout_seconds: float | None = None  # 单次运行整体超时（秒），None=不限制
     agent_max_tool_calls: int = 10  # 单次运行最多工具调用次数
 
+    # ---- 任务流程（阶段二：可控工作流）----
+    task_max_steps: int = 5  # 单次任务最多规划/执行步数
+    task_max_retries: int = 2  # 单步失败最大重试次数
+    task_timeout_seconds: float | None = None  # 单次 run/resume 调用超时（秒），None=不限制
+    checkpoint_db_path: str = ".workpilot/checkpoints.sqlite"  # checkpoint 持久化数据库
+
     # ---- 文件工具 ----
     # 授权目录：字符串可用平台分隔符（Windows ';'，POSIX ':'）或逗号分隔。
     # NoDecode：阻止 pydantic-settings 把该字段当 JSON 解析，交给 _parse_allowed_dirs 处理普通字符串。
@@ -53,7 +59,9 @@ class Settings(BaseSettings):
     def _resolve_allowed_dirs(cls, value: list[Path]) -> list[Path]:
         return [p.expanduser().resolve() for p in value]
 
-    @field_validator("llm_request_timeout", "agent_timeout_seconds", mode="before")
+    @field_validator(
+        "llm_request_timeout", "agent_timeout_seconds", "task_timeout_seconds", mode="before"
+    )
     @classmethod
     def _empty_str_to_none(cls, value: object) -> object:
         # .env 里留空（如 `WORKPILOT_LLM_REQUEST_TIMEOUT=`）会得到空字符串，需转为 None。

@@ -2,7 +2,7 @@
 
 一个能够执行办公任务的智能 Agent：支持文档读取与生成、多步骤任务执行、RAG 知识库问答、执行日志与结果验证。
 
-> **当前状态：文档工具 + 模型客户端 + LangChain Agent 已就绪。** 尚未实现 FastAPI API、RAG、MCP 或前端功能。
+> **当前状态：文档工具 + 模型客户端 + LangChain Agent + 可控任务工作流（LangGraph）已就绪。** 尚未实现 FastAPI API、RAG、MCP 或前端功能。
 
 ## 项目目标
 
@@ -20,6 +20,7 @@
 - ✅ 三个文件工具：`list_files` / `read_document` / `create_document`（含路径校验与授权目录）。
 - ✅ 工具注册到 LangChain Agent（`create_agent` tool-calling 循环）。
 - ✅ 完整工具调用循环 + 异常捕获（`ToolErrorMiddleware`）+ 调用次数限制（`ToolCallLimitMiddleware`）+ 超时（模型请求 + 整体运行）。
+- ✅ 可控任务工作流（`workflow/`）：`TaskState` 统一状态 + LangGraph 规划/执行/验证节点 + checkpoint 持久化 + 覆盖写人工确认 + 写文件幂等。
 
 尚未实现：
 
@@ -32,7 +33,7 @@
 | 语言 | Python 3.11+（开发环境 3.14.5） | ✅ |
 | 模型接入 | LangChain（`ChatOpenAI`，OpenAI 兼容） | ✅ 已实现 |
 | 工具调用 | LangChain `create_agent` | ✅ 已实现 |
-| 工作流 | LangGraph | 阶段 4（`create_agent` 底层已使用） |
+| 工作流 | LangGraph | ✅ 已实现（显式 `StateGraph`：规划/执行/验证） |
 | 校验 | Pydantic + pydantic-settings | ✅ 已实现 |
 | API | FastAPI | 阶段 1（顺延） |
 | 知识库 | Chroma | 阶段 5 |
@@ -56,12 +57,16 @@ work_pilot_agent/
 │   ├── config/           # Settings（pydantic-settings 读 .env）
 │   ├── schemas/          # Pydantic 工具参数模型
 │   ├── tools/            # 路径校验 + 三个文件工具 + LangChain 注册
-│   └── agent/            # 模型客户端 + Agent 组装 + 运行器（超时/结构化结果）
+│   ├── agent/            # 模型客户端 + Agent 组装 + 运行器（超时/结构化结果）
+│   └── workflow/         # 可控任务工作流（TaskState + LangGraph + checkpoint + 确认）
 └── tests/
     ├── test_smoke.py
+    ├── test_config.py
     ├── test_paths.py
     ├── test_tools.py
-    └── test_agent.py
+    ├── test_agent.py
+    ├── test_workflow.py
+    └── test_workflow_verify.py
 ```
 
 （`.venv/`、`.tmp/`、`.pytest-tmp/` 为本地生成，已被 gitignore。）
@@ -70,7 +75,7 @@ work_pilot_agent/
 
 - **Python**：`>=3.11`（当前开发机 3.14.5）。
 - **依赖管理**：`venv + pip + pyproject.toml`（PEP 621），未引入 uv/poetry。
-- **运行时依赖**：`langchain`、`langchain-core`、`langchain-openai`、`pydantic`、`pydantic-settings`。
+- **运行时依赖**：`langchain`、`langchain-core`、`langchain-openai`、`langgraph`、`langgraph-checkpoint-sqlite`、`pydantic`、`pydantic-settings`。
 - **开发依赖**：`pytest`。
 
 ### 安装

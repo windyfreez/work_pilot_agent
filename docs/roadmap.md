@@ -30,11 +30,16 @@
 
 **依赖**：fastapi、uvicorn。
 
-## 阶段 4：LangGraph 工作流编排
+## 阶段 4（已完成）✅：LangGraph 可控工作流
 
-- 显式状态图：读取 → 处理 → 生成 → 校验；状态持久化与重放。
+- [x] 统一 `TaskState`（TypedDict）+ `PlanStep` / `Plan` / `VerificationResult`。
+- [x] LangGraph 节点：规划（LLM 结构化输出）→ 执行（确定性工具调用）→ 验证 → 结束。
+- [x] 最大步骤数（`task_max_steps`）、重试次数（`task_max_retries`）、任务超时（`task_timeout_seconds`）。
+- [x] checkpoint 持久化（`langgraph-checkpoint-sqlite`）。
+- [x] 写文件幂等（原子写 + 内容相同 no-op）。
+- [x] 覆盖写人工确认（`interrupt` + `Command(resume)`）。
 
-**依赖**：langgraph（已随 langchain 1.x 安装）。
+**验收**：`pytest` 全绿。依赖新增：langgraph、langgraph-checkpoint-sqlite。
 
 ## 阶段 5：RAG 知识库
 
@@ -44,7 +49,7 @@
 
 ## 阶段 6：执行日志与结果验证
 
-- 结构化执行日志（任务 ID、步骤、耗时）+ 结果验证器（存在性 / 格式 / 非空）。
+- 结构化执行日志（任务 ID、步骤、耗时）；结果验证器已部分实现（`workflow/verify.py`）。
 
 ## 阶段 7：Vue 3 前端
 
@@ -55,3 +60,4 @@
 - 文档格式：仍仅 txt/md；PDF / Word / Excel 解析库选型未定。
 - LLM 供应商：采用 OpenAI 兼容协议，具体供应商 / 模型名经 `.env` 配置；真实调用需人工提供密钥验收。
 - langsmith 弃用告警（第三方，测试运行输出 13 条 `asyncio.iscoroutinefunction` 弃用告警）。
+- 任务超时语义：当前按单次 `run`/`resume` 调用计时，不含人工确认的等待时间（人工确认跨进程恢复依赖 SQLite checkpoint）。

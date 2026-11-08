@@ -1,8 +1,18 @@
 """文件工具的核心实现（纯函数，便于单元测试）。"""
 
+import os
+import uuid
 from pathlib import Path
 
 from ._paths import PathError, PathResolver
+
+
+def read_text_or_none(path: Path) -> str | None:
+    """读取文本内容；失败（二进制 / IO 错误）返回 None。"""
+    try:
+        return path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return None
 
 
 def list_files(resolver: PathResolver, directory: str, recursive: bool = False) -> list[str]:
@@ -37,9 +47,31 @@ def read_document(resolver: PathResolver, path: str, max_bytes: int = 1_000_000)
         raise PathError(f"文件不是有效的 UTF-8 文本：'{path}'") from exc
 
 
-def create_document(resolver: PathResolver, path: str, content: str) -> str:
-    """在授权目录内创建（或覆盖）文本文件，返回其绝对路径。"""
+def is_overwrite(resolver: PathResolver, path: str, content: str) -> bool:
+    """判断 create_document 是否会覆盖一个内容不同的已存在文件（高风险操作）。"""
     target = resolver.resolve(path)
+    if not (target.exists() and target.is_file()):
+        return False
+    return read_text_or_none(target) != content
+
+
+def create_document(resolver: PathResolver, path: str, content: str) -> str:
+    """在授权目录内创建（或覆盖）文本文件，返回其绝对路径。
+
+    幂等策略：已存在且内容相同时为 no-op；写入采用「临时文件 + 原子 rename」，
+    失败不会留下半截文件。
+    """
+    target = resolver.resolve(path)
+    if target.exists() and target.is_file():
+        if read_text_or_none(target) == content:
+            return str(target)  # 内容相同，幂等 no-op
+
     target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(content, encoding="utf-8")
+    tmp = target.parent / f".{target.name}.{uuid.uuid4().hex}.tmp"
+    try:
+        tmp.write_text(content, encoding="utf-8")
+        os.replace(tmp, target)
+    finally:
+        if tmp.exists():
+            tmp.unlink(missing_ok=True)
     return str(target)
